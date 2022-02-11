@@ -1,0 +1,16 @@
+.container {
+    @apply bg-slate-100 w-full max-w-none p-3 flex justify-center items-center;
+    height: calc(theme('height.screen') - theme('height.36'));
+}
+.chart {
+    @apply w-[90vw] h-full bg-white shadow-md relative cursor-pointer;
+}
+.chart_canvas {
+    @apply w-full h-full bg-gray-400;
+}
+.interact_canvas {
+    @apply w-full h-full absolute top-0 left-0 bg-transparent;
+}
+.interactor {
+    @apply w-full h-full absolute top-0 left-0 bg-transparent z-30;
+}

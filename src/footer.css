@@ -1,0 +1,6 @@
+.timeline_box {
+    @apply cursor-pointer select-none;
+}
+.timeline_overlay {
+    @apply cursor-move;
+}
