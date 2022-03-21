@@ -30,13 +30,9 @@ const baseConfig: Configuration = {
             {
                 test: /\.css$/,
                 use: [
-                    process.env.NODE_ENV === 'production'
-                        ? {
-                              loader: MiniCssExtractPlugin.loader,
-                          }
-                        : {
-                              loader: 'style-loader',
-                          },
+                    {
+                        loader: MiniCssExtractPlugin.loader,
+                    },
                     {
                         loader: 'css-loader',
                     },

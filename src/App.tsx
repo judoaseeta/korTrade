@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { Route, Routes } from 'react-router-dom'
-import { rollup } from 'd3-array'
 import { csvParse } from 'd3-dsv'
 // components
 import Nav from './Nav'
@@ -8,9 +7,10 @@ import Footer from './footer'
 import Chart from './Chart'
 
 // logics
-import { createReducedData, filterUnnecessary, filterByDateRange, filterByType } from './logics'
+import { filterUnnecessary } from './logics'
 // utils
-import { convertRemToPixels } from './utils'
+import { size } from './utils'
+
 // types
 import { ChartProps, FooterProps, NavProps } from './types/view'
 import { TradeData, RawTradeData, TradeType, TradeTypeEnum } from './types/entity'
@@ -21,9 +21,19 @@ import './app.css'
 const App = (): JSX.Element => {
     //loading status
     const [loading, setLoading] = useState(true)
-    const chartWidth = window.innerWidth * 0.9
-    const chartHeight = window.innerHeight - convertRemToPixels(11)
-    const [timeRange, setTimeRange] = useState<TimeRange>(['2020.01', '2020.08'])
+    const [chartWidth, setChartWidth] = useState(size.chartWidth())
+    const [chartHeight, setChartHeight] = useState(size.chartHeight())
+    useEffect(() => {
+        const resizeListener = () => {
+            setChartWidth(size.chartWidth())
+            setChartHeight(size.chartHeight())
+        }
+        window.addEventListener('resize', resizeListener)
+        return () => {
+            window.removeEventListener('size', resizeListener)
+        }
+    }, [])
+    const [timeRange, setTimeRange] = useState<TimeRange>(['2020.01', '2020.02'])
     const onUpdateTimeRange = (newTimeRange: TimeRange) => {
         setTimeRange(newTimeRange)
     }
@@ -73,6 +83,8 @@ const App = (): JSX.Element => {
 
     // props
     const footerProps: FooterProps = {
+        chartHeight,
+        chartWidth,
         timelines,
         timeRange,
         tradeType,

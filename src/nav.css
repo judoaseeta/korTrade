@@ -2,8 +2,9 @@
     @apply pl-8 w-screen h-8 flex flex-row justify-start items-center  text-white;
     background-color: #22a6b3;
 }
+
 .nav_heading {
-    @apply text-sm;
+    @apply text-sm mx-1;
 }
 .nav_selector {
     @apply text-sm text-black ml-3;
@@ -19,4 +20,22 @@
 }
 .nav_label {
     @apply flex flex-row;
+}
+@media (max-width: 1200px) {
+    .nav {
+        @apply text-sm flex-col h-16 items-start justify-center;
+    }
+
+    .nav_heading {
+        @apply text-xs;
+    }
+    .nav_selector {
+        @apply text-xs;
+    }
+    .nav_time {
+        @apply text-xs;
+    }
+    .nav_breadcrumb {
+        @apply mx-2;
+    }
 }

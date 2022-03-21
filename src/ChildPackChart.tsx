@@ -10,7 +10,7 @@ import { getNameFromInternMap, numberWithCommas, createColorScaleByNodeName } fr
 export default function ChildPackChart({ currentTree, vector, nodes, colorScale }: ChildPackChartProps): JSX.Element {
     const arcGenerator = arc<PieArcDatum<HierarchyRectangularNode<HierarchialTradeData>>>()
         .innerRadius(vector.width * 0.1)
-        .outerRadius(vector.width * 0.4)
+        .outerRadius(vector.width * 0.3)
     const pieData = useMemo(() => {
         if (!nodes.children && currentTree.children) {
             const pieGenerator = pie<HierarchyRectangularNode<HierarchialTradeData>>().value((d) => d.value || 0)(
@@ -35,18 +35,22 @@ export default function ChildPackChart({ currentTree, vector, nodes, colorScale 
             <svg width={vector.width} height={vector.height}>
                 {!nodes.children && (
                     <g transform={`translate(${vector.width / 2}, ${vector.height * 0.4})`}>
-                        <circle cx={0} cy={0} r={vector.width * 0.4} fill="lightgrey"></circle>
+                        <circle cx={0} cy={0} r={vector.width * 0.3} fill="lightgrey"></circle>
                     </g>
                 )}
                 {!nodes.children && currentPie && (
                     <g transform={`translate(${vector.width / 2}, ${vector.height * 0.4})`}>
-                        <path d={arcGenerator(currentPie) || ''} fill={colorScale(getNameFromInternMap(nodes.data))} />
+                        <path
+                            d={arcGenerator(currentPie) || ''}
+                            fill={colorScale(getNameFromInternMap(nodes.data))}
+                            stroke="black"
+                        />
                     </g>
                 )}
                 {!nodes.children && (
                     <g>
                         <text
-                            className="text-[0.7rem] font-bold fill-slate-800"
+                            className="text-[0.8rem] font-bold fill-slate-800"
                             x={vector.width / 2}
                             y={vector.height * 0.4}
                             alignmentBaseline="middle"
@@ -55,7 +59,7 @@ export default function ChildPackChart({ currentTree, vector, nodes, colorScale 
                             {(((nodes.value || 0) / (currentTree.value || 0)) * 100).toFixed(3)}%
                         </text>
                         <text
-                            className="text-[0.6rem] font-bold fill-slate-800"
+                            className="text-[0.8rem] font-bold fill-slate-800"
                             x={vector.width / 2}
                             y={vector.height * 0.8}
                             alignmentBaseline="middle"
@@ -64,7 +68,7 @@ export default function ChildPackChart({ currentTree, vector, nodes, colorScale 
                             {getNameFromInternMap(nodes.data)}
                         </text>
                         <text
-                            className="text-[0.6rem]"
+                            className="text-[0.8rem]"
                             x={vector.width / 2}
                             y={vector.height * 0.9}
                             alignmentBaseline="middle"

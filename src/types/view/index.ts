@@ -5,6 +5,8 @@ import { TradeType, TradeData } from '../entity'
 // usecase
 import { HierarchialTradeData, InteractingData, TimeRange, Vector } from '../usecase'
 export interface FooterProps {
+    chartWidth: number
+    chartHeight: number
     timelines?: string[]
     data?: TradeData[]
     timeRange: TimeRange
@@ -27,6 +29,7 @@ export interface NavProps {
 export interface FooterInteractChartProps extends InteractingData {
     interactTimeRange?: TimeRange
     currentTimeRange: TimeRange
+    tradeType: TradeType
 }
 
 export interface ChildPackChartProps {

@@ -9,6 +9,8 @@ import FooterInteractChart from './footerInteractChart'
 // style
 import './index.css'
 import './footer.css'
+// constants
+import { colorSet } from './constants'
 // logics
 import {
     createHierarchialData,
@@ -22,7 +24,7 @@ import { FooterProps } from './types/view'
 // hooks
 import { useCategories } from './hooks'
 // utils
-import { convertRemToPixels } from './utils'
+import { convertRemToPixels, isSameTimeRanges, size } from './utils'
 import { TimeRange, HierarchialTradeData, InteractingData } from './types/usecase'
 
 const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: FooterProps): JSX.Element => {
@@ -159,7 +161,7 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
         },
         [clonedTimeRange, , getTimelineByPosX, pointerDowned, timeRange, timeLineScale, createHiearchyDataOnInteract],
     )
-    // left poiner event handler
+    // left pointer event handler
     const onLeftPointerMove: React.PointerEventHandler = useCallback(
         (e) => {
             const downX = pointerDowned
@@ -168,6 +170,7 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
                 const moveX = currentX - downX
                 const startTimeRangeX = timeLineScale(timeRange[0]) || 0
                 const newStartTimeRange = getTimelineByPosX(startTimeRangeX + moveX)
+                console.log(newStartTimeRange)
                 if (newStartTimeRange) {
                     setClonedTimeRange((oldTimeRange) => {
                         if (oldTimeRange) {
@@ -183,7 +186,56 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
         },
         [clonedTimeRange, createHiearchyDataOnInteract, getTimelineByPosX, pointerDowned, timeRange, timeLineScale],
     )
+    const onLeftTipPointerMove: React.PointerEventHandler = useCallback(
+        (e) => {
+            const downX = pointerDowned
+            if (downX > -1 && timeLineScale) {
+                const currentX = e.clientX
+                const moveX = currentX - downX
+                const startTimeRangeX = timeLineScale(timeRange[0]) || 0
+                const newStartTimeRange = getTimelineByPosX(startTimeRangeX + moveX)
 
+                if (newStartTimeRange) {
+                    setClonedTimeRange((oldTimeRange) => {
+                        if (oldTimeRange) {
+                            if (newStartTimeRange > timeRange[0]) {
+                                return [timeRange[0], newStartTimeRange]
+                            }
+                            return [newStartTimeRange, timeRange[0]]
+                        }
+                    })
+                    createHiearchyDataOnInteract()
+                }
+            }
+        },
+        [clonedTimeRange, createHiearchyDataOnInteract, getTimelineByPosX, pointerDowned, timeRange, timeLineScale],
+    )
+    const onRightTipPointerMove: React.PointerEventHandler = useCallback(
+        (e) => {
+            const downX = pointerDowned
+            if (downX > -1 && timeLineScale && clonedTimeRange) {
+                const currentX = e.clientX
+                const moveX = currentX - downX
+
+                const endTimeRangeX = timeLineScale(timeRange[0]) || 0
+
+                const newEndTimeRange = getTimelineByPosX(endTimeRangeX + moveX)
+
+                if (newEndTimeRange) {
+                    setClonedTimeRange((oldTimeRange) => {
+                        if (oldTimeRange) {
+                            if (newEndTimeRange < timeRange[0]) {
+                                return [newEndTimeRange, timeRange[0]]
+                            }
+                            return [timeRange[0], newEndTimeRange]
+                        }
+                    })
+                    createHiearchyDataOnInteract()
+                }
+            }
+        },
+        [createHiearchyDataOnInteract, timeRange, getTimelineByPosX, pointerDowned, timeLineScale],
+    )
     // right pointer event handler
     const onRightPointerMove: React.PointerEventHandler = useCallback(
         (e) => {
@@ -244,9 +296,7 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
             const mappedData = [...exportDatas.values()]
             const min = Math.min(...mappedData)
             const max = Math.max(...mappedData)
-            return scaleLinear()
-                .domain([min, max])
-                .range([0, convertRemToPixels(5) * 0.9])
+            return scaleLinear().domain([min, max]).range([size.footerChartHeight(), 0])
         }
     }, [exportDatas])
     const importScale: ScaleLinear<number, number> | undefined = useMemo(() => {
@@ -254,9 +304,7 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
             const mappedData = [...importDatas.values()]
             const min = Math.min(...mappedData)
             const max = Math.max(...mappedData)
-            return scaleLinear()
-                .domain([min, max])
-                .range([0, convertRemToPixels(5) * 0.9])
+            return scaleLinear().domain([min, max]).range([size.footerChartHeight(), 0])
         }
     }, [importDatas])
     useEffect(() => {
@@ -305,7 +353,7 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
                     ctx.beginPath()
                     ctx.save()
                     ctx.translate(bandWidth / 2, canvasHeight * 0.1)
-                    ctx.strokeStyle = 'red'
+                    ctx.strokeStyle = colorSet.up
                     ctx.lineWidth = 2
                     exportLine(
                         [...exportDatas.entries()].sort((a, b) => {
@@ -333,7 +381,7 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
                     ctx.beginPath()
                     ctx.save()
                     ctx.translate(bandWidth / 2, canvasHeight * 0.1)
-                    ctx.strokeStyle = 'blue'
+                    ctx.strokeStyle = colorSet.down
                     ctx.lineWidth = 2
                     importLine(
                         [...importDatas.entries()].sort((a, b) => {
@@ -364,7 +412,12 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
             const endTimelineText = endTimeRange ? endTimeRange.slice(2) : ''
             const endTimeRangeXpos = endTimeRange ? timeLineScale(endTimeRange) || 0 : 0
             const endTimeRangeYPos = convertRemToPixels(2) * 0.1
-
+            // tip related
+            const isLeftToolTipRenderable = !timeRange[1] && timeLineScale && timeLineScale.domain()[0] !== timeRange[0]
+            const isRightToolTipRenderable =
+                !timeRange[1] &&
+                timeLineScale &&
+                timeLineScale.domain()[timeLineScale.domain().length - 1] !== timeRange[0]
             return (
                 <g transform={`translate(${window.innerWidth * 0.05 + bandwidth / 2},0)`}>
                     {endTimeRange && (
@@ -377,41 +430,76 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
                             width={endTimeRangeXpos - startTimeRangeXpos}
                             y={convertRemToPixels(2)}
                             height={convertRemToPixels(5)}
-                            fillOpacity={0.3}
+                            fillOpacity={0.2}
                             fill="grey"
                         />
                     )}
-                    <g
-                        className="timeline_box"
-                        onPointerDown={onPointerDown}
-                        onPointerMove={onLeftPointerMove}
-                        onPointerUp={onPointerUp}
-                    >
-                        <rect
-                            x={startTimeRangeXpos - width / 2}
-                            y={startTimeRangeYPos}
-                            width={width}
-                            height={height}
-                            fill="#d35400"
-                            rx={5}
-                            ry={5}
-                        />
-                        <text
-                            alignmentBaseline="middle"
-                            textAnchor="middle"
-                            x={startTimeRangeXpos}
-                            y={startTimeRangeYPos + height / 2}
-                            fill="white"
+                    <g>
+                        {isLeftToolTipRenderable && (
+                            <rect
+                                x={startTimeRangeXpos - width / 2 - 5}
+                                y={startTimeRangeYPos}
+                                width={10}
+                                height={10}
+                                fill="red"
+                                onPointerDown={onPointerDown}
+                                onPointerMove={onLeftTipPointerMove}
+                                onPointerUp={onPointerUp}
+                                className="cursor-ew-resize"
+                                fillOpacity={isSameTimeRanges(clonedTimeRange, timeRange) ? 1 : 0}
+                            />
+                        )}
+                        {isRightToolTipRenderable && (
+                            <rect
+                                x={startTimeRangeXpos + width / 2 - 5}
+                                y={startTimeRangeYPos}
+                                width={10}
+                                height={10}
+                                fill="red"
+                                onPointerDown={onPointerDown}
+                                onPointerMove={onRightTipPointerMove}
+                                onPointerUp={onPointerUp}
+                                className="cursor-ew-resize"
+                                fillOpacity={isSameTimeRanges(clonedTimeRange, timeRange) ? 1 : 0}
+                            />
+                        )}
+                        <g
+                            className="timeline_box"
+                            onPointerDown={onPointerDown}
+                            onPointerMove={onLeftPointerMove}
+                            onPointerUp={onPointerUp}
                         >
-                            {startTimelineText}
-                        </text>
-                        <rect
-                            x={startTimeRangeXpos - 1}
-                            y={height}
-                            width={2}
-                            height={canvasHeight + convertRemToPixels(2) * 0.2}
-                            fill="#d35400"
-                        />
+                            <rect
+                                x={startTimeRangeXpos - width / 2}
+                                y={startTimeRangeYPos}
+                                width={width}
+                                height={height}
+                                fill={colorSet.select}
+                                rx={5}
+                                ry={5}
+                            />
+                            <text
+                                alignmentBaseline="middle"
+                                textAnchor="middle"
+                                x={startTimeRangeXpos}
+                                y={startTimeRangeYPos + height / 2}
+                                fill="white"
+                                className="text-[0.8rem]"
+                            >
+                                {startTimelineText}
+                            </text>
+                            <rect
+                                x={startTimeRangeXpos - 1}
+                                y={height}
+                                width={2}
+                                height={canvasHeight + convertRemToPixels(2) * 0.2}
+                                fill={colorSet.select}
+                                onPointerDown={onPointerDown}
+                                onPointerMove={onLeftPointerMove}
+                                onPointerUp={onPointerUp}
+                                className="cursor-ew-resize"
+                            />
+                        </g>
                     </g>
                     {endTimeRange && (
                         <g
@@ -425,7 +513,7 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
                                 y={endTimeRangeYPos}
                                 width={width}
                                 height={height}
-                                fill="#d35400"
+                                fill={colorSet.select}
                                 rx={5}
                                 ry={5}
                             />
@@ -435,6 +523,7 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
                                 x={endTimeRangeXpos}
                                 y={endTimeRangeYPos + height / 2}
                                 fill="white"
+                                className="text-[0.8rem]"
                             >
                                 {endTimelineText}
                             </text>
@@ -443,7 +532,11 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
                                 y={height}
                                 width={2}
                                 height={canvasHeight + convertRemToPixels(2) * 0.2}
-                                fill="#d35400"
+                                fill={colorSet.select}
+                                onPointerDown={onPointerDown}
+                                onPointerMove={onRightPointerMove}
+                                onPointerUp={onPointerUp}
+                                className="cursor-ew-resize"
                             />
                         </g>
                     )}
@@ -468,8 +561,33 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
                     {...interactingData}
                     currentTimeRange={timeRange}
                     interactTimeRange={clonedTimeRange}
+                    tradeType={tradeType}
                 />
             )}
+            <svg className="h-28 w-[5vw] z-10 absolute top-0 left-0">
+                <line
+                    x1={5}
+                    x2={window.innerWidth * 0.035}
+                    y1={convertRemToPixels(7) * 0.4}
+                    y2={convertRemToPixels(7) * 0.4}
+                    stroke={colorSet.up}
+                    strokeWidth={4}
+                />
+                <text x={5} y={convertRemToPixels(7) * 0.4 + 5} alignmentBaseline="hanging">
+                    수출액
+                </text>
+                <line
+                    x1={5}
+                    x2={window.innerWidth * 0.035}
+                    y1={convertRemToPixels(7) * 0.7}
+                    y2={convertRemToPixels(7) * 0.7}
+                    stroke={colorSet.down}
+                    strokeWidth={4}
+                />
+                <text x={5} y={convertRemToPixels(7) * 0.7 + 5} alignmentBaseline="hanging">
+                    수입액
+                </text>
+            </svg>
             <svg className="absolute top-0 left-0 w-full h-full">{TimeFlag}</svg>
             <div className="h-8 w-full">
                 <svg width={window.innerWidth} height={convertRemToPixels(2)}>
@@ -500,6 +618,7 @@ const Footer = ({ data, timelines, timeRange, tradeType, onUpdateTimeRange }: Fo
                                             x={bandWidth / 2}
                                             y={height / 2}
                                             fill="white"
+                                            className="text-[0.8rem]"
                                         >
                                             {timelineText}
                                         </text>

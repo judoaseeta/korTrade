@@ -3,12 +3,16 @@ import React, { useCallback, useMemo } from 'react'
 import { scaleBand, scaleLinear } from 'd3-scale'
 // types
 import { FooterInteractChartProps } from './types/view'
+// utils
 import { createColorScaleByNodeName, numberWithCommas, getNameFromInternMap, getInvertedColor } from './utils'
+// constants
+import { colorSet } from './constants'
 export default function FooterInteractChart({
     currentTree,
     interactTree,
     currentTimeRange,
     interactTimeRange,
+    tradeType,
 }: FooterInteractChartProps): JSX.Element {
     const currentTreeColorScale = useMemo(() => {
         if (currentTree && currentTree.children) {
@@ -83,8 +87,8 @@ export default function FooterInteractChart({
                             alignmentBaseline="middle"
                         >
                             {currentTimeRange[1]
-                                ? `현재 선택된 ${currentTimeRange[0]} - ${currentTimeRange[1]} 구간의 데이터`
-                                : `현재 선택된 ${currentTimeRange[0]} 구간의 데이터`}
+                                ? `현재 선택된 ${currentTimeRange[0]} - ${currentTimeRange[1]} 구간의 ${tradeType}`
+                                : `현재 선택된 ${currentTimeRange[0]} 구간의 ${tradeType}`}
                         </text>
 
                         <g transform={`translate(${window.innerWidth * 0.05},${window.innerHeight * 0.05})`}>
@@ -112,7 +116,7 @@ export default function FooterInteractChart({
                                                 fill={currentTreeColorScale(name)}
                                             />
                                             <text
-                                                className="text-[0.8rem]"
+                                                className="text-[0.7rem]"
                                                 alignmentBaseline="middle"
                                                 textAnchor="middle"
                                                 x={half}
@@ -139,8 +143,8 @@ export default function FooterInteractChart({
                                 alignmentBaseline="middle"
                             >
                                 {interactTimeRange[1]
-                                    ? `호버중인 ${interactTimeRange[0]} - ${interactTimeRange[1]} 구간의 데이터`
-                                    : `호버중인 ${interactTimeRange[0]} 구간의 데이터`}
+                                    ? `호버중인 ${interactTimeRange[0]} - ${interactTimeRange[1]} 구간의 ${tradeType}`
+                                    : `호버중인 ${interactTimeRange[0]} 구간의 ${tradeType}`}
                             </text>
                         )}
                         <g transform={`translate(0,${window.innerHeight * 0.05})`}>
@@ -149,6 +153,7 @@ export default function FooterInteractChart({
                                 interactTreeColorScale &&
                                 interactTree &&
                                 interactTree.children?.map((child, childIndex) => {
+                                    const textareaWidth = window.innerWidth * 0.05
                                     const bandwidth = interactTreeBandScale.bandwidth()
                                     const name = getNameFromInternMap(child.data)
                                     const key = `rank_label_${name}`
@@ -156,43 +161,53 @@ export default function FooterInteractChart({
                                     if (oldRank > -1) {
                                         const yPos = interactTreeBandScale(name) || 0
                                         const change = oldRank - childIndex
-                                        const color = change === 0 ? 'black' : change > 0 ? 'red' : 'blue'
+                                        const color = change === 0 ? 'black' : change > 0 ? colorSet.up : colorSet.down
                                         const oldCategoryColor = currentTreeColorScale(name)
                                         const newCategoryColor = interactTreeColorScale(name)
 
                                         return (
                                             <g key={key} transform={`translate(0,${yPos + bandwidth / 2})`}>
-                                                <circle cx={10} cy={0} r={8} fill={oldCategoryColor}></circle>
-                                                <circle cx={27} cy={0} r={8} fill={newCategoryColor}></circle>
+                                                <circle
+                                                    cx={textareaWidth * 0.1}
+                                                    cy={0}
+                                                    r={textareaWidth * 0.1}
+                                                    fill={oldCategoryColor}
+                                                ></circle>
+                                                <circle
+                                                    cx={textareaWidth * 0.3}
+                                                    cy={0}
+                                                    r={textareaWidth * 0.1}
+                                                    fill={newCategoryColor}
+                                                ></circle>
                                                 {change === 0 && (
                                                     <text
-                                                        x={40}
+                                                        x={textareaWidth * 0.4}
                                                         y={0}
                                                         alignmentBaseline="middle"
                                                         fill={color}
-                                                        className="text-[1rem]"
+                                                        className="text-[0.8rem]"
                                                     >
                                                         ({change})
                                                     </text>
                                                 )}
                                                 {change < 0 && (
                                                     <text
-                                                        x={40}
+                                                        x={textareaWidth * 0.4 + 1}
                                                         y={0}
                                                         alignmentBaseline="middle"
                                                         fill={color}
-                                                        className="text-[1rem]"
+                                                        className="text-[0.8rem]"
                                                     >
                                                         -{Math.abs(change)}
                                                     </text>
                                                 )}
                                                 {change > 0 && (
                                                     <text
-                                                        x={40}
+                                                        x={textareaWidth * 0.4 + 1}
                                                         y={0}
                                                         alignmentBaseline="middle"
                                                         fill={color}
-                                                        className="text-[1rem]"
+                                                        className="text-[0.8rem]"
                                                     >
                                                         +{change}
                                                     </text>
@@ -231,7 +246,7 @@ export default function FooterInteractChart({
                                                 fill={interactTreeColorScale(name)}
                                             />
                                             <text
-                                                className="text-[0.8rem]"
+                                                className="text-[0.7rem]"
                                                 alignmentBaseline="middle"
                                                 textAnchor="middle"
                                                 x={half}
@@ -263,7 +278,7 @@ export default function FooterInteractChart({
                         x={window.innerWidth * 0.025}
                         y={window.innerHeight * 0.025}
                         width={rectWidth}
-                        fill="lightgrey"
+                        fill="grey"
                         height={window.innerHeight * 0.05}
                     />
                     <rect
@@ -288,7 +303,7 @@ export default function FooterInteractChart({
                         y={window.innerHeight * 0.05}
                         alignmentBaseline="middle"
                         textAnchor="middle"
-                        fill={getInvertedColor('#1f77b4')}
+                        fill="white"
                     >
                         $ {numberWithCommas(currentTree.value || 0)} (천달러)
                     </text>
@@ -298,7 +313,7 @@ export default function FooterInteractChart({
                         x={window.innerWidth * 0.025}
                         y={window.innerHeight * 0.025}
                         width={rectWidth}
-                        fill="lightgrey"
+                        fill="grey"
                         height={window.innerHeight * 0.05}
                     />
                     <rect
@@ -325,7 +340,7 @@ export default function FooterInteractChart({
                         y={window.innerHeight * 0.05}
                         alignmentBaseline="middle"
                         textAnchor="middle"
-                        fill={getInvertedColor('#1f77b4')}
+                        fill="white"
                     >
                         $ {numberWithCommas(interactTree.value || 0)} (천달러)
                     </text>

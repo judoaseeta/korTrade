@@ -1,9 +1,8 @@
 .container {
-    @apply bg-slate-100 w-full max-w-none p-3 flex justify-center items-center;
-    height: calc(theme('height.screen') - theme('height.36'));
+    @apply bg-slate-100 w-full h-full max-w-none flex flex-col justify-center items-center;
 }
 .chart {
-    @apply w-[90vw] h-full bg-white shadow-md relative cursor-pointer;
+    @apply w-[90vw] h-auto bg-white shadow-md relative cursor-pointer;
 }
 .chart_canvas {
     @apply w-full h-full bg-gray-400;

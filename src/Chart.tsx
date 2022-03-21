@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect, useState, useMemo } from 'react'
+import React, { useCallback, useRef, useEffect, useState, useMemo, Children } from 'react'
 // d3
 import { HierarchyRectangularNode, HierarchyCircularNode, HierarchyNode, pack } from 'd3-hierarchy'
 // hooks
@@ -13,7 +13,9 @@ import {
     createColorScaleByNodeName,
     getInvertedColor,
     getNameFromInternMap,
+    size,
 } from './utils'
+
 // logics
 import {
     searchInQuadTree,
@@ -113,33 +115,33 @@ export default function Chart({
                         ctx.restore()
                         ctx.closePath()
                         const textPadding = 5
-
-                        const text = getNameFromInternMap(rootNode.data)
+                        const titleFontSize = `${size.chartNodeTitle()}px`
+                        const title = getNameFromInternMap(rootNode.data)
                         const value = rootNode.value || 0
                         const commaedValue = `$ ${numberWithCommas(value)} (천달러)`
                         const percentage = ((value / total) * 100).toFixed(2) + '%'
                         const valueSize = getTextSize(commaedValue, '0.7rem')
-                        const nameSize = getTextSize(text, '0.8rem')
+                        const titleSize = getTextSize(title, titleFontSize)
                         const percentageSize = getTextSize(percentage, '0.7rem')
-                        if (nameSize) {
-                            const isTextFitInRect = isTextFit({
-                                textSize: nameSize,
+                        if (titleSize) {
+                            const isTitleFitInRect = isTextFit({
+                                textSize: titleSize,
                                 width: currentWidth,
                                 height: currentHeight,
                                 paddingLeft: textPadding,
                                 paddingTop: textPadding,
                             })
-                            if (isTextFitInRect) {
-                                const text = getNameFromInternMap(rootNode.data)
+                            if (isTitleFitInRect) {
+                                const title = getNameFromInternMap(rootNode.data)
 
                                 const textColor = getInvertedColor(rectColor, true)
 
                                 ctx.save()
                                 ctx.beginPath()
-                                ctx.font = `0.8rem Arial`
+                                ctx.font = titleFontSize
                                 ctx.textBaseline = 'hanging'
                                 ctx.fillStyle = textColor
-                                ctx.fillText(text, rootNode.x0 + textPadding, rootNode.y0 + textPadding)
+                                ctx.fillText(title, rootNode.x0 + textPadding, rootNode.y0 + textPadding)
 
                                 ctx.restore()
                                 ctx.closePath()
@@ -148,7 +150,7 @@ export default function Chart({
                                     const isValueFit = isTextFit({
                                         textSize: valueSize,
                                         width: currentWidth - 5,
-                                        height: currentHeight - 5 - nameSize.height,
+                                        height: currentHeight - 5 - titleSize.height,
                                         paddingLeft: 3,
                                         paddingTop: 3,
                                     })
@@ -161,14 +163,14 @@ export default function Chart({
                                         ctx.fillText(
                                             commaedValue,
                                             rootNode.x0 + textPadding,
-                                            rootNode.y0 + textPadding + nameSize.height + 3,
+                                            rootNode.y0 + textPadding + titleSize.height + 3,
                                         )
                                         ctx.restore()
                                         ctx.closePath()
                                         const isPercentageFit = isTextFit({
                                             textSize: percentageSize!,
                                             width: currentWidth - 5,
-                                            height: currentHeight - 5 - nameSize.height - valueSize.height,
+                                            height: currentHeight - 5 - titleSize.height - valueSize.height,
                                             paddingLeft: 3,
                                             paddingTop: 3,
                                         })
@@ -180,7 +182,7 @@ export default function Chart({
                                             ctx.fillText(
                                                 percentage,
                                                 rootNode.x0 + textPadding,
-                                                rootNode.y0 + textPadding + nameSize.height + valueSize.height + 8,
+                                                rootNode.y0 + textPadding + titleSize.height + valueSize.height + 8,
                                             )
 
                                             ctx.fillStyle = 'black'
@@ -240,7 +242,7 @@ export default function Chart({
 
                                     ctx.save()
                                     ctx.beginPath()
-                                    ctx.font = `0.8rem Arial`
+                                    ctx.font = `0.9rem Arial`
                                     ctx.textBaseline = 'hanging'
                                     ctx.fillStyle = textColor
                                     ctx.fillText(text, childNode.x0 + textPadding, childNode.y0 + textPadding)
@@ -313,6 +315,9 @@ export default function Chart({
                 const x = e.clientX - left
                 const y = e.clientY - top
                 if (currentNode && isVectorIntersectWithNode(x, y, currentNode)) {
+                    if (!currentNode.children) {
+                        return
+                    }
                     return
                 } else {
                     const node = searchInQuadTree({ nodes: currentTree.children, x, y })
@@ -325,26 +330,28 @@ export default function Chart({
                             return bValue - aValue
                         })
                         setHoveredPackNodes(packed)
-                        let vector: Vector
-                        if (node.children) {
-                            vector = getToolTipPosAndSize({
-                                node,
-                                contextHeight: chartHeight,
-                                contextWidth: chartWidth,
-                                maxToolTipWidth: chartWidth * 0.5,
-                                maxToolTipHeight: chartHeight * 0.8,
-                            })
-                        } else {
-                            vector = getToolTipPosAndSize({
-                                node,
-                                contextHeight: chartHeight,
-                                contextWidth: chartWidth,
-                                maxToolTipWidth: chartHeight * 0.3,
-                                maxToolTipHeight: chartHeight * 0.4,
-                            })
-                        }
 
-                        setHoveredPackVector(vector)
+                        if (node.children) {
+                            setHoveredPackVector(
+                                getToolTipPosAndSize({
+                                    node,
+                                    contextHeight: chartHeight,
+                                    contextWidth: chartWidth,
+                                    maxToolTipWidth: chartWidth * 0.5,
+                                    maxToolTipHeight: chartHeight * 0.8,
+                                }),
+                            )
+                        } else {
+                            setHoveredPackVector(
+                                getToolTipPosAndSize({
+                                    node,
+                                    contextHeight: chartHeight,
+                                    contextWidth: chartWidth,
+                                    maxToolTipWidth: chartHeight * 0.4,
+                                    maxToolTipHeight: chartHeight * 0.4,
+                                }),
+                            )
+                        }
                     }
                 }
             }
@@ -411,6 +418,15 @@ export default function Chart({
     }, [currentTree, hoveredPackNodes, hoveredPackVector, treeNameColorScale])
     return (
         <div className="container">
+            <div className="w-[90vw] h-12 flex justify-start items-center">
+                {currentTree && (
+                    <h1>
+                        <em className="text-lg mr-2 font-bold">총액:</em>
+                        <span>$</span>
+                        {numberWithCommas(currentTree.value || 0)}
+                    </h1>
+                )}
+            </div>
             <div className="chart">
                 {loading && <Loading />}
                 <canvas className="chart_canvas" ref={chartRef} width={chartWidth} height={chartHeight}></canvas>

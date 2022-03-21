@@ -4,7 +4,7 @@ import { scaleOrdinal, ScaleOrdinal } from 'd3-scale'
 import { schemeCategory10 } from 'd3-scale-chromatic'
 import { HierarchyNode, HierarchyRectangularNode } from 'd3-hierarchy'
 // usecase
-import { Size, ParsedCategoryQueryString } from '../types/usecase'
+import { Size, ParsedCategoryQueryString, TimeRange } from '../types/usecase'
 
 export function getNameFromInternMap(intern: InternMap<string, InternMap<string, InternMap<string, number>>>): string {
     return Array.isArray(intern) ? (intern[0] ? intern[0] : '') : ''
@@ -112,4 +112,38 @@ export const parseCategoryQueryString = (queryString: string): ParsedCategoryQue
 }
 export function numberWithCommas(x: number) {
     return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ',')
+}
+
+export function isSameTimeRanges(range1: TimeRange, range2: TimeRange) {
+    if (range1[1] === null && range2[1] === null) {
+        return range1[0] === range2[0]
+    } else if (range1[1] !== null && range2[1] !== null) {
+        return range1[0] === range2[0] && range1[1] === range2[1]
+    } else {
+        return false
+    }
+}
+
+type SizeTypes = 'chartWidth' | 'chartHeight' | 'chartNodeTitle' | 'footerChartHeight'
+export const size: {
+    [name in SizeTypes]: () => number
+} = {
+    chartWidth: () => window.innerWidth * 0.9,
+    chartHeight: () => {
+        const deviceHeight = window.innerHeight
+        if (deviceHeight < 1200) {
+            return deviceHeight - convertRemToPixels(15)
+        } else {
+            return deviceHeight - convertRemToPixels(13)
+        }
+    },
+    chartNodeTitle: () => {
+        const deviceWidth = window.innerWidth
+        if (deviceWidth < 1200) {
+            return convertRemToPixels(1.5)
+        } else {
+            return convertRemToPixels(0.8)
+        }
+    },
+    footerChartHeight: () => convertRemToPixels(5) * 0.9,
 }
